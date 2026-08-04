@@ -1,0 +1,220 @@
+:root {
+  --bg-dark-core: #090d16;
+  --bg-dark-panel: #111827;
+  --border-tech: #1f2937;
+  --neon-blue: #38bdf8;
+  --neon-purple: #a855f7;
+  --text-primary: #f3f4f6;
+  --text-secondary: #9ca3af;
+  --success-glow: #10b981;
+  --error-glow: #f43f5e;
+}
+
+body {
+  background-color: var(--bg-dark-core);
+  color: var(--text-primary);
+  font-family: 'SF Mono', Consolas, 'Liberation Mono', Menlo, monospace;
+  margin: 0;
+  padding: 0;
+}
+
+.research-wrapper {
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+.research-header {
+  border-bottom: 1px solid var(--border-tech);
+  padding-bottom: 30px;
+  margin-bottom: 40px;
+}
+
+.badge {
+  display: inline-block;
+  background: rgba(56, 189, 248, 0.1);
+  color: var(--neon-blue);
+  border: 1px solid var(--neon-blue);
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+}
+
+.research-header h1 {
+  font-size: 2.25rem;
+  margin: 0 0 10px 0;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.subtitle {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  max-width: 800px;
+  line-height: 1.6;
+}
+
+/* Dashboard Splitting Layout */
+.dashboard-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+}
+
+@media(max-width: 900px) {
+  .dashboard-layout { grid-template-columns: 1fr; }
+}
+
+.research-card {
+  background: var(--bg-dark-panel);
+  border: 1px solid var(--border-tech);
+  border-radius: 8px;
+  padding: 24px;
+}
+
+.card-header h3 {
+  font-size: 1.15rem;
+  margin: 0 0 4px 0;
+  color: var(--text-primary);
+}
+
+.card-header p {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  margin: 0 0 24px 0;
+}
+
+/* Grid Parameter Form Styling */
+.grid-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.id-span { grid-column: span 2; }
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field-group label {
+  font-size: 0.75rem;
+  color: var(--neon-blue);
+  text-transform: uppercase;
+}
+
+.field-group input {
+  background: var(--bg-dark-core);
+  border: 1px solid var(--border-tech);
+  padding: 10px;
+  color: white;
+  border-radius: 4px;
+  font-family: inherit;
+  outline: none;
+}
+
+.field-group input:focus {
+  border-color: var(--neon-blue);
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.2);
+}
+
+.run-btn {
+  grid-column: span 2;
+  margin-top: 10px;
+  background: transparent;
+  color: var(--text-primary);
+  border: 1px solid var(--neon-purple);
+  padding: 14px;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: bold;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.run-btn:hover {
+  background: var(--neon-purple);
+  box-shadow: 0 0 15px rgba(168, 85, 247, 0.4);
+}
+
+/* Empirical Chart Tracing Modules */
+.chart-placeholder {
+  height: 250px;
+  border: 2px dashed var(--border-tech);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--text-secondary);
+  padding: 20px;
+}
+
+.bar-chart-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.chart-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.engine-label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.bar-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--bg-dark-core);
+  border-radius: 4px;
+  overflow: hidden;
+  padding-right: 10px;
+}
+
+.bar {
+  height: 35px;
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  min-width: 4px;
+}
+
+.sql-bar { background: linear-gradient(90deg, #1d4ed8, var(--neon-blue)); }
+.nosql-bar { background: linear-gradient(90deg, #6d28d9, var(--neon-purple)); }
+
+.time-metric {
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+
+/* Metadata Footnotes */
+.metadata-log {
+  border-top: 1px solid var(--border-tech);
+  padding-top: 16px;
+}
+
+.metadata-log h4 {
+  margin: 0 0 12px 0;
+  font-size: 0.9rem;
+}
+
+.log-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.success { color: var(--success-glow); }
+.failed { color: var(--error-glow); }
