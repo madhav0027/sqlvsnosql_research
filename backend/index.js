@@ -41,7 +41,141 @@ function logToCsv(metrics) {
 }
 
 
+// 1. GET ALL USERS (Fetch from MongoDB primary, fallback to PostgreSQL)
+app.get('/api/users', async (req, res) => {
+    try {
+        const users = await userSchema.find().lean();
+        res.status(200).json(users);
+    } catch (mongoErr) {
+        try {
+            const pgRes = await dbclient.query('SELECT id AS "_id", name, email, age, salary FROM users');
+            res.status(200).json(pgRes.rows);
+        } catch (pgErr) {
+            res.status(500).json({ error: "Failed to fetch users from databases." });
+        }
+    }
+});
 
+// 2. CREATE USER (POST /api/users)
+app.post('/api/users', async (req, res) => {
+    return handleSingleUserOperation(req, res, 'INSERT');
+});
+
+// 3. UPDATE USER (PUT /api/users/:id)
+app.put('/api/users/:id', async (req, res) => {
+    req.params_id = req.params.id;
+    return handleSingleUserOperation(req, res, 'UPDATE');
+});
+
+// 4. DELETE USER (DELETE /api/users/:id)
+app.delete('/api/users/:id', async (req, res) => {
+    req.params_id = req.params.id;
+    return handleSingleUserOperation(req, res, 'DELETE');
+});
+
+// Shared Benchmark & Execution Engine
+async function handleSingleUserOperation(req, res, operation) {
+    const { name, email, age, salary } = req.body;
+    const userId = req.params_id || req.body._id || req.body.id || crypto.randomUUID();
+
+    const record = {
+        _id: userId,
+        name,
+        email,
+        age: age ? Number(age) : 0,
+        salary: salary ? Number(salary) : 0
+    };
+
+    const data_size = Buffer.byteLength(JSON.stringify(record), 'utf8');
+    const field_count = Object.keys(record).length;
+
+    let sql_time = 0;
+    let mongo_time = 0;
+
+    // --- 1. PostgreSQL Benchmark ---
+    const sqlStart = performance.now();
+    try {
+        if (operation === 'INSERT') {
+            const query = `INSERT INTO users (id, name, email, age, salary) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (id) DO NOTHING`;
+            await dbclient.query(query, [record._id, record.name, record.email, record.age, record.salary]);
+        } else if (operation === 'READ') {
+            const query = `SELECT * FROM users WHERE id = $1`;
+            await dbclient.query(query, [record._id]);
+        } else if (operation === 'UPDATE') {
+            const query = `UPDATE users SET name = $1, email = $2, age = $3, salary = $4 WHERE id = $5`;
+            await dbclient.query(query, [record.name, record.email, record.age, record.salary, record._id]);
+        } else if (operation === 'DELETE') {
+            const query = `DELETE FROM users WHERE id = $1`;
+            await dbclient.query(query, [record._id]);
+        }
+        sql_time = parseFloat((performance.now() - sqlStart).toFixed(3));
+    } catch (error) {
+        console.error('PostgreSQL Error:', error.stack);
+        sql_time = -1;
+    }
+
+    // --- 2. MongoDB Benchmark ---
+    const mongoStart = performance.now();
+    try {
+        if (operation === 'INSERT') {
+            await userSchema.create({
+                _id: record._id,
+                name: record.name,
+                email: record.email,
+                age: record.age,
+                salary: record.salary
+            });
+        } else if (operation === 'READ') {
+            await userSchema.findById(record._id);
+        } else if (operation === 'UPDATE') {
+            await userSchema.updateOne(
+                { _id: record._id },
+                { $set: { name: record.name, email: record.email, age: record.age, salary: record.salary } }
+            );
+        } else if (operation === 'DELETE') {
+            await userSchema.deleteOne({ _id: record._id });
+        }
+        mongo_time = parseFloat((performance.now() - mongoStart).toFixed(3));
+    } catch (error) {
+        console.error('MongoDB Error:', error);
+        mongo_time = -1;
+    }
+
+    // --- 3. Evaluate Winner & Metrics ---
+    let winner = "Tie";
+    if (sql_time !== -1 && mongo_time !== -1) {
+        winner = sql_time < mongo_time ? "SQL (PostgreSQL)" : "NoSQL (MongoDB)";
+    } else if (sql_time === -1) {
+        winner = "MongoDB (SQL Failed)";
+    } else if (mongo_time === -1) {
+        winner = "PostgreSQL (MongoDB Failed)";
+    }
+
+    const performanceReport = {
+        operation: `SINGLE_${operation}`,
+        data_size,
+        field_count,
+        record_count: 1,
+        has_join: false,
+        indexed: true,
+        sql_time,
+        mongo_time,
+        winner
+    };
+
+    if (typeof logToCsv === 'function') {
+        logToCsv(performanceReport);
+    }
+
+    // --- 4. Return Updated User Record + Benchmark Metrics ---
+    return res.status(operation === 'INSERT' ? 201 : 200).json({
+        success: true,
+        user: record,
+        metrics: performanceReport
+    });
+}
+
+// RESTORED BULK BENCHMARK ROUTE (/api/benchmark/bulk)
 app.post('/api/benchmark/bulk', async (req, res) => {
     const { operation, records } = req.body; 
 
@@ -61,9 +195,8 @@ app.post('/api/benchmark/bulk', async (req, res) => {
         let sql_time = 0;
         let mongo_time = 0;
 
-  
+        // --- 1. PostgreSQL Bulk Operation Benchmark ---
         const sqlStart = performance.now();
-
         try {
             if (operation === 'INSERT') {
                 const query = `INSERT INTO users (id, name, email, age, salary) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (id) DO NOTHING`;
@@ -84,6 +217,7 @@ app.post('/api/benchmark/bulk', async (req, res) => {
             sql_time = -1;
         } 
       
+        // --- 2. MongoDB Bulk Operation Benchmark ---
         const mongoStart = performance.now();
         try {
             if (operation === 'INSERT') {
@@ -110,6 +244,7 @@ app.post('/api/benchmark/bulk', async (req, res) => {
             mongo_time = -1;
         }
 
+        // --- 3. Evaluate Winner & Metrics ---
         let winner = "Tie";
         if (sql_time !== -1 && mongo_time !== -1) {
             winner = sql_time < mongo_time ? "SQL (PostgreSQL)" : "NoSQL (MongoDB)";
@@ -131,7 +266,10 @@ app.post('/api/benchmark/bulk', async (req, res) => {
             winner
         };
 
-        logToCsv(performanceReport);
+        if (typeof logToCsv === 'function') {
+            logToCsv(performanceReport);
+        }
+
         allReports.push(performanceReport);
     }
 
@@ -140,7 +278,7 @@ app.post('/api/benchmark/bulk', async (req, res) => {
     res.status(200).json({
         success: true,
         message: `Processed and logged ${allReports.length} individual ${operation} rows.`,
-        metrics: allReports[allReports.length - 1] // Returns the last processed report for UI reference
+        metrics: allReports[allReports.length - 1] // Returns the latest metrics report for the UI
     });
 });
 
