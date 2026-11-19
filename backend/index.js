@@ -16,8 +16,7 @@ app.use(express.json());
 app.use(cors({ origin: '*' }));
 
 nosqlconnection();
-
-        const dbclient = ConnectDB();
+const dbclient = ConnectDB();
 
 
 // Helper function to log metrics to CSV
@@ -282,6 +281,8 @@ app.post('/api/benchmark/bulk', async (req, res) => {
     });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, (err) => {
+        if(err)
+         throw err;
     console.log(`Server is running at ${PORT}`);
 });
