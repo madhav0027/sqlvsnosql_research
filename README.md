@@ -723,14 +723,6 @@ Database Recommendation
 
 ---
 
-# 👨‍💻 Author
-
-**SQL vs NoSQL Database Analyzer**
-
-A research-oriented project for evaluating relational and NoSQL database performance using benchmarking, analytics, and machine learning.
-
----
-
 # 📜 License
 
 This project is intended for academic, research, and educational purposes.
