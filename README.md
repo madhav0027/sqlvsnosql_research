@@ -723,6 +723,9 @@ Database Recommendation
 
 ---
 
+author 
+this project made by madhav pathak 
+
 # 📜 License
 
 This project is intended for academic, research, and educational purposes.
